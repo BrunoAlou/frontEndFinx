@@ -2,11 +2,13 @@
   <div id="app">
     <header class="justify-content-between">
       <div class="header-content">
-        <img src="@/assets/logo.png" alt="Logo" class="logo" />
+        <a href="#">
+          <img src="@/assets/logo.png" alt="Logo" class="logo" />
+        </a>
       </div>
       <div class="avatar">
-          <img src="@/assets/avatar.png" alt="Avatar" />
-        </div>
+        <img src="@/assets/avatar.png" alt="Avatar" />
+      </div>
     </header>
     <div class="container-fluid">
       <div class="row">

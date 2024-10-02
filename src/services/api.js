@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080';
+const API_URL = process.env.VUE_APP_BASE_API_URL;
+const DATA_ENDPOINT = `${API_URL}data`;
 
-const formatDate2 = (date) => {
+const formatDate = (date) => {
   if (!date) return 'Data Inválida';
 
   const d = new Date(date);
-
   if (isNaN(d.getTime())) return 'Data Inválida';
 
   const day = String(d.getUTCDate()).padStart(2, '0');
@@ -16,39 +16,26 @@ const formatDate2 = (date) => {
   return `${day}/${month}/${year}`;
 };
 
+const filterData = (data, filters) => {
+  return data.filter(item => {
+    const { medico, paciente, dataCriacao, dataNascimento } = filters;
+
+    const matchesMedico = medico ? item.medico.nome.toLowerCase().includes(medico.toLowerCase()) : true;
+    const matchesPaciente = paciente ? item.paciente.nome.toLowerCase().includes(paciente.toLowerCase()) : true;
+    const matchesDataCriacao = dataCriacao ? formatDate(item.dataCriacao) === formatDate(dataCriacao) : true;
+    const matchesDataNascimento = dataNascimento ? new Date(item.paciente.dataNascimento).toLocaleDateString() === new Date(dataNascimento).toLocaleDateString() : true;
+
+    return matchesMedico && matchesPaciente && matchesDataCriacao && matchesDataNascimento;
+  });
+};
+
 export const getAgendamentos = async (paginaAtual = 1, itensPorPagina = 3, medico = '', paciente = '', dataCriacao = '', dataNascimento = '') => {
   try {
-    const response = await axios.get(`${API_URL}/data`);
-
+    const response = await axios.get(DATA_ENDPOINT);
     const agendamentosOriginais = response.data;
-    let agendamentos = [...agendamentosOriginais];
 
-    if (medico) {
-      agendamentos = agendamentos.filter(agendamento =>
-        agendamento.medico.nome.toLowerCase().includes(medico.toLowerCase())
-      );
-    }
-
-    if (paciente) {
-      agendamentos = agendamentos.filter(agendamento =>
-        agendamento.paciente.nome.toLowerCase().includes(paciente.toLowerCase())
-      );
-    }
-    if (dataCriacao) {
-      const formattedDataCriacao = formatDate2(dataCriacao);
-
-      agendamentos = agendamentos.filter(agendamento => {
-        const formattedAgendamentoData = formatDate2(agendamento.dataCriacao);
-        return formattedAgendamentoData === formattedDataCriacao;
-      });
-    }
-
-
-    if (dataNascimento) {
-      agendamentos = agendamentos.filter(agendamento =>
-        new Date(agendamento.paciente.dataNascimento).toLocaleDateString() === new Date(dataNascimento).toLocaleDateString()
-      );
-    }
+    const filters = { medico, paciente, dataCriacao, dataNascimento };
+    const agendamentos = filterData(agendamentosOriginais, filters);
 
     const totalItems = agendamentos.length;
     const totalDePaginas = Math.ceil(totalItems / itensPorPagina);
@@ -57,10 +44,10 @@ export const getAgendamentos = async (paginaAtual = 1, itensPorPagina = 3, medic
     return {
       agendamentos: agendamentosPaginados,
       paginacao: {
-        paginaAtual: paginaAtual,
-        itensPorPagina: itensPorPagina,
-        totalDePaginas: totalDePaginas,
-        totalItems: totalItems
+        paginaAtual,
+        itensPorPagina,
+        totalDePaginas,
+        totalItems
       }
     };
   } catch (error) {
@@ -69,10 +56,9 @@ export const getAgendamentos = async (paginaAtual = 1, itensPorPagina = 3, medic
   }
 };
 
-
 export const getMedicos = async (search = '') => {
   try {
-    const response = await axios.get(`${API_URL}/data`);
+    const response = await axios.get(DATA_ENDPOINT);
     const medicos = response.data.map(agendamento => agendamento.medico);
     const filteredMedicos = medicos.filter(m => m.nome.toLowerCase().includes(search.toLowerCase()));
     return Array.from(new Set(filteredMedicos.map(m => m.nome))).map(nome => ({ nome }));
@@ -84,7 +70,7 @@ export const getMedicos = async (search = '') => {
 
 export const getPacientes = async (search = '') => {
   try {
-    const response = await axios.get(`${API_URL}/data`);
+    const response = await axios.get(DATA_ENDPOINT);
     const pacientes = response.data.map(agendamento => agendamento.paciente);
     const filteredPacientes = pacientes.filter(p => p.nome.toLowerCase().includes(search.toLowerCase()));
     return Array.from(new Set(filteredPacientes.map(p => p.nome))).map(nome => ({ nome }));

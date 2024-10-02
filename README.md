@@ -40,7 +40,7 @@ frontend-finx/
 
 4. Acesse o projeto no navegador:
     ```
-    http://localhost:8080
+    http://localhost:8081
     ```
 
 ## Scripts Disponíveis
